@@ -1,0 +1,49 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": []
+    },
+    "config_munge": {
+        "files": {}
+    },
+    "installed_plugins": {
+        "cordova-plugin-android-permissions": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-background-mode": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-bluetooth-serial": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-dialogs": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-file": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-geolocation": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-networking-bluetooth": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-shake": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-whitelist": {
+            "PACKAGE_NAME": "perc.android"
+        }
+    },
+    "dependent_plugins": {
+        "cordova-plugin-device": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-compat": {
+            "PACKAGE_NAME": "perc.android"
+        },
+        "cordova-plugin-device-motion": {
+            "PACKAGE_NAME": "perc.android"
+        }
+    }
+}
