@@ -13,7 +13,7 @@
     // region vars
     // "use strict"; no is default
     var device_names = {};   // key value pair
-    var broadCastHist = {};  // what type?
+    var broadCastHist = "";  // what type?
     var thisAddr = '';
     var firstRun = null;
     var disaster = 1; // set to 1 when disaster msgs/events detected
@@ -113,13 +113,15 @@
     function switchWithPeer() {
         // time2 stage history bcast (see top of this/index.js)
         bluetoothSerial.setName(broadCastHist); // object[history] undefined error
-        for (var key in broadCastHist) {
-            document.getElementById("out").innerHTML += broadCastHist[key];
-        }
+        document.getElementById("out").innerHTML += "<br />" + broadCastHist;
+        
         
         //(function () {
         //    setInterval({}, 1000);
         //})();
+
+        device_names[0] = "forDebuggingOnly";
+
         if (disaster === 1) {
             //document.getElementById("me").innerHTML = thisAddr;
             getOtherTeeth();
@@ -132,9 +134,9 @@
                     if (device_names.hasOwnProperty(key)) {
                         if (picked === cnt) {
                             chosen = 1;
-                            document.getElementById("out").innerHTML += device_names[picked];
+                            document.getElementById("out").innerHTML += "<br />" + device_names[picked];
                             bluetoothSerial.setName(device_names[picked]);
-                            broadCastHist[key] += device_names[picked];
+                            broadCastHist += device_names[picked] + ",";
                         }
                         cnt++;
                     }
