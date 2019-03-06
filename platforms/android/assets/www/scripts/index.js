@@ -13,6 +13,7 @@
     // region vars
     // "use strict"; no is default
     var device_names = {};   // key value pair
+    //device_names[0] = "forDebuggingOnly";
     var broadCastHist = "";  // what type?
     var thisAddr = '';
     var firstRun = null;
@@ -31,12 +32,14 @@
     //    alert("Sample is: " + string);
     //}
     function onDeviceReady() {
+        //bluetoothSerial.clear();
         GPSinit();
         localPhysicalAddr();      
         setupTasks();
-        while (disaster != 1) {
-            pollForDisaster();
-        }
+        //getOtherTeeth();
+        //while (disaster !== 1) {
+        //    pollForDisaster();
+        //}
         turnBluOn(setThisBeaconMsg(makeThisPublic(getOtherTeeth())));
         (function () {
             setInterval(switchWithPeer, 5000);
@@ -65,13 +68,17 @@
         //var receivedElement = parentElement.querySelector('.received');
         //listeningElement.setAttribute('style', 'display:none;');
         //receivedElement.setAttribute('style', 'display:block;');
-        var permissions = cordova.plugins.permissions;
-        // perms req android 6
+
+
+
+        
+        //var permissions = cordova.plugins.permissions;
+        //// perms req android 6
         var list = [
             permissions.CAMERA,
             permissions.GET_ACCOUNTS,
-            //permissions.BLUETOOTH,
-            //permissions.BLUETOOTH_ADMIN,
+            permissions.BLUETOOTH,
+            permissions.BLUETOOTH_ADMIN,
             permissions.ACCESS_COARSE_LOCATION,
             permissions.ACCESS_FINE_LOCATION,
             permissions.INTERNET,
@@ -88,8 +95,26 @@
             permissions.READ_SYNC_SETTINGS,
             permissions.READ_SYNC_STAT
         ];
+
+        permissions.hasPermission(list, callback, null);
+
+        function error() {
+            navigator.notification.alert('permissions are not turned on');
+        }
+
+        function success(status) {
+            if (!status.hasPermission) {
+
+                permissions.requestPermissions(
+                    list,
+                    function (status) {
+                        if (!status.hasPermission) error();
+                    },
+                    error);
+            }
+        }
         //permissions.requestPermission(list, success, error);
-        permissions.hasPermission(list, null, null); // deprecated, but it takes a list...does updated API take list obj?
+        //permissions.hasPermission(list, null, null); // deprecated, but it takes a list...does updated API take list obj?
 
         var cook = window.localStorage;
         firstRun = cook.getItem("firstRun");
@@ -112,71 +137,68 @@
     }
     function switchWithPeer() {
         // time2 stage history bcast (see top of this/index.js)
-        bluetoothSerial.setName(broadCastHist); // object[history] undefined error
-        document.getElementById("out").innerHTML += "<br />" + broadCastHist;
-        
-        
+        //bluetoothSerial.setName(broadCastHist); // object[history] undefined error
+        //document.getElementById("out").innerHTML += "<br />" + "BCAST===" + broadCastHist + "===";
+        //getOtherTeeth();
         //(function () {
         //    setInterval({}, 1000);
         //})();
-
-        device_names[0] = "forDebuggingOnly";
-
-        if (disaster === 1) {
-            //document.getElementById("me").innerHTML = thisAddr;
-            getOtherTeeth();
-            var chosen = 0;
-            while (chosen !== 1) {
-                //choose slave, if none are master, otherwise make this the master
-                var picked = decideBeacon(countProperties(device_names));
-                var cnt = 0;
-                for (var key in device_names) { // key is mac aa::bb::cc:: etc and val = bluetooth_name
-                    if (device_names.hasOwnProperty(key)) {
-                        if (picked === cnt) {
-                            chosen = 1;
-                            document.getElementById("out").innerHTML += "<br />" + device_names[picked];
-                            bluetoothSerial.setName(device_names[picked]);
-                            broadCastHist += device_names[picked] + ",";
-                        }
-                        cnt++;
+        getOtherTeeth();
+        navigator.window.alert(device_names[0]);
+        var chosen = 0;
+        while (chosen !== 1) {
+            //choose slave, if none are master, otherwise make this the master
+            var picked = decideBeacon(countProperties(device_names));
+            var cnt = 0;
+            for (var key in device_names) { // key is mac aa::bb::cc:: etc and val = bluetooth_name
+                if (device_names.hasOwnProperty(key)) {
+                    if (picked === cnt) {
+                        
+                        bluetoothSerial.setName(device_names[picked]);
+                        chosen = 1;
+                        document.getElementById("out").innerHTML += "<br />" + device_names[picked];
+                        broadCastHist += device_names[picked];
                     }
+                    cnt++;
                 }
-                //var x = document.getElementById("out").innerHTML
-                //x = Array.from(new Set(x.split(','))).toString()
-                //document.getElementById("out").innerHTML += x;
-                //navigator.notification.alert("uploading gps data collection from self and neighbors: " + x);
             }
+            //var x = document.getElementById("out").innerHTML
+            //x = Array.from(new Set(x.split(','))).toString()
+            //document.getElementById("out").innerHTML += x;
+            //navigator.notification.alert("uploading gps data collection from self and neighbors: " + x);
         }
+
         var storage2 = window.localStorage;
         storage2.setItem("history", broadCastHist);
         uploadToGPSsite();
-    }    
+    } 
     function localPhysicalAddr() {
-        if (firstRun == 1) {
+        if (firstRun === 1) {
             navigator.notification.prompt(
-                'Enter your address into the window. Your GPS coords will be added as well. \n Also, Are you a First Responder? (if Yes, you will collect unique emergency requests on your device)',  // message
-                onPrompt,                  // callback to invoke
+                'Enter your address into the window. Your GPS coords will be added as well',  // message
+            onPrompt,                  // callback to invoke
                 'For First Responders',    // title
-                ['Yes', 'No']              // buttonLabels
+                ['Ok', 'No']              // buttonLabels
             );
-            function onPrompt(results) { // when not firstreposnderr addr is blank on refresh
-                if (results.buttonIndex == 1) {
-                    var responderCook = window.localStorage;
-                    var addrCook = window.localStorage;
-                    responderCook.setItem("isResponder", "1");
-                    addrCook.setItem("addr", thisAddr + results.input1);
-                    
-                }
-                else {
-                    var responderCook2 = window.localStorage;
-                    var addrCook2 = window.localStorage;
-                    responderCook2.setItem("isResponder", "0");
-                    addrCook2.setItem("addr", thisAddr + results.input1);
-                   
-                }
+        }
+        function onPrompt(results) { // when not firstreposnderr addr is blank on refresh
+            if (results.buttonIndex === 1) {
+                //var responderCook = window.localStorage;
+                //var addrCook = window.localStorage;
+                //responderCook.setItem("isResponder", "1");
+                addrCook.setItem("addr", thisAddr + results.input1);
+                
+            }
+            else {
+                //var responderCook2 = window.localStorage;
+                //var addrCook2 = window.localStorage;
+                //responderCook2.setItem("isResponder", "0");
+                //addrCook2.setItem("addr", thisAddr + results.input1);
+               
             }
         }
     }
+    
     function pollForDisaster() {
         // feeds from other apps
     }
@@ -487,7 +509,16 @@
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }    
     function getOtherTeeth() {
-        // *** device_names[device.address] == 'undefined' when slot is empty
+        //bluetoothSerial.discoverUnpaired(function (devices) {
+        //    devices.forEach(function (device) {
+        //        navigator.notification.alert(device.id);
+        //    })
+        //}, failure);
+        //bluetoothSerial.setDeviceDiscoveredListener(function (device) {
+        //    navigator.notification.alert('Found: ' + device.id);
+        //});
+        //bluetoothSerial.discoverUnpaired(success, failure);
+        //// *** device_names[device.address] == 'undefined' when slot is empty
         var updateDeviceName = function (device) {
             //if (device.name.includes("+")) {
             //var storage = window.localStorage;
@@ -495,7 +526,7 @@
             device_names[device.address] = device.name;
                 //switchToAddr = device.address;
             //}
-            //navigator.notification.alert('msg: ' + device_names[device.address]);
+            navigator.notification.alert('msg: ' + device_names[device.address]);
 
         };
 

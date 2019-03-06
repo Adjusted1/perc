@@ -67,4 +67,7 @@
     <preference name="AndroidPersistentFileLocation" value="Internal" />
     <preference name="iosPersistentFileLocation" value="Library" />
     <preference name="Fullscreen" value="True" />
+    <preference name="android-minSdkVersion" value="19" />
+    <preference name="android-maxSdkVersion" value="22" />
+    <preference name="ShowTitle" value="True" />
 </widget>
