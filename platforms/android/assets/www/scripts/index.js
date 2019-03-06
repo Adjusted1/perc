@@ -15,13 +15,12 @@
     var device_names = {};   // key value pair
     //device_names[0] = "forDebuggingOnly";
     var broadCastHist = "";  // what type?
-    var thisAddr = '';
-    var firstRun = null;
+    var thisGPScoord = '';
+    var addr = null; // will have gps appended to end
+    var firstRun = 1; // back to null for release
     var disaster = 1; // set to 1 when disaster msgs/events detected
     var master = 0; // default as bluetooth ad-hoc slave device
-
     //var cnt = 0; // number msgs in recv window
-
     document.addEventListener('deviceready', onDeviceReady.bind(this), false);
     //function testLZString() {
     //    var string = "This is my compression test.";
@@ -33,9 +32,9 @@
     //}
     function onDeviceReady() {
         //bluetoothSerial.clear();
-        GPSinit();
-        localPhysicalAddr();      
-        setupTasks();
+        
+       
+        perms(localPhysicalAddr(GPSinit()));
         //getOtherTeeth();
         //while (disaster !== 1) {
         //    pollForDisaster();
@@ -60,80 +59,43 @@
         ////catch (error) { navigator.notification.alert('background run function(s) error: ' + error); }
         // #endregion
     }
-
-    function setupTasks() {
-        // TODO: Cordova has been loaded. Perform any initialization that requires Cordova here.
-        //var parentElement = document.getElementById('deviceready');
-        ////var listeningElement = parentElement.querySelector('.listening');
-        //var receivedElement = parentElement.querySelector('.received');
-        //listeningElement.setAttribute('style', 'display:none;');
-        //receivedElement.setAttribute('style', 'display:block;');
-
-
-
-        
-        //var permissions = cordova.plugins.permissions;
+    function perms() {
+        var permissions = cordova.plugins.permissions;
         //// perms req android 6
-        var list = [
-            permissions.CAMERA,
-            permissions.GET_ACCOUNTS,
-            permissions.BLUETOOTH,
-            permissions.BLUETOOTH_ADMIN,
-            permissions.ACCESS_COARSE_LOCATION,
-            permissions.ACCESS_FINE_LOCATION,
-            permissions.INTERNET,
-            permissions.ACCESS_LOCATION_EXTRA_COMMANDS,
-            permissions.ACCESS_NETWORK_STATE,
-            permissions.ACCESS_NOTIFICATION_POLICY,
-            permissions.ACCESS_WIFI_STATE,
-            permissions.BROADCAST_STICKY,
-            permissions.CHANGE_NETWORK_STATE,
-            permissions.CHANGE_WIFI_MULTICAST_STATE,
-            permissions.CHANGE_WIFI_STATE,
-            permissions.KILL_BACKGROUND_PROCESSES,
-            permissions.NFC,
-            permissions.READ_SYNC_SETTINGS,
-            permissions.READ_SYNC_STAT
-        ];
+        //var list = [
+        //    permissions.GET_ACCOUNTS,
+        //    permissions.BLUETOOTH,
+        //    permissions.BLUETOOTH_ADMIN,
+        //    permissions.ACCESS_COARSE_LOCATION,
+        //    permissions.ACCESS_FINE_LOCATION,
+        //    permissions.INTERNET,
+        //    permissions.ACCESS_LOCATION_EXTRA_COMMANDS,
+        //    permissions.ACCESS_NETWORK_STATE,
+        //    permissions.ACCESS_NOTIFICATION_POLICY,
+        //    permissions.ACCESS_WIFI_STATE,
+        //    permissions.BROADCAST_STICKY,
+        //    permissions.CHANGE_NETWORK_STATE,
+        //    permissions.CHANGE_WIFI_MULTICAST_STATE,
+        //    permissions.CHANGE_WIFI_STATE,
+        //    permissions.KILL_BACKGROUND_PROCESSES,
+        //    permissions.NFC,
+        //    permissions.READ_SYNC_SETTINGS,
+        //    permissions.READ_SYNC_STAT
+        //];
 
-        permissions.hasPermission(list, callback, null);
+        permissions.requestPermission(permissions.BLUETOOTH, success, error);
+        permissions.requestPermission(permissions.BLUETOOTH_ADMIN, success, error);
+        permissions.requestPermission(permissions.ACCESS_COARSE_LOCATION, success, error);
+        permissions.requestPermission(permissions.ACCESS_FINE_LOCATION, success, error);
+        permissions.requestPermission(permissions.INTERNET, success, error);
 
         function error() {
-            navigator.notification.alert('permissions are not turned on');
+            console.warn('Camera permission is not turned on');
         }
 
         function success(status) {
-            if (!status.hasPermission) {
-
-                permissions.requestPermissions(
-                    list,
-                    function (status) {
-                        if (!status.hasPermission) error();
-                    },
-                    error);
-            }
+            if (!status.hasPermission) error();
         }
-        //permissions.requestPermission(list, success, error);
-        //permissions.hasPermission(list, null, null); // deprecated, but it takes a list...does updated API take list obj?
-
-        var cook = window.localStorage;
-        firstRun = cook.getItem("firstRun");
-        if (firstRun === 1) {
-            navigator.notification.alert('firstrun!, addr= ' + thisAddr);
-            //localPhysicalAddr();
-            //navigator.notification.alert('tried to write div prop');
-
-        }
-        else { // includes firstrun = null
-            firstRun = 0;
-            cook.setItem("firstRun", "0")
-            //document.getElementById("me").innerHTML = cook.gps;
-            // in plain js
-            //document.getElementById('body').style.display = 'none';
-            //document.getElementById('body').style.display = 'block';
-            //navigator.notification.alert('tried to write div prop');
-        }
-
     }
     function switchWithPeer() {
         // time2 stage history bcast (see top of this/index.js)
@@ -172,33 +134,35 @@
         storage2.setItem("history", broadCastHist);
         uploadToGPSsite();
     } 
-    function localPhysicalAddr() {
-        if (firstRun === 1) {
-            navigator.notification.prompt(
-                'Enter your address into the window. Your GPS coords will be added as well',  // message
-            onPrompt,                  // callback to invoke
-                'For First Responders',    // title
-                ['Ok', 'No']              // buttonLabels
-            );
-        }
-        function onPrompt(results) { // when not firstreposnderr addr is blank on refresh
-            if (results.buttonIndex === 1) {
-                //var responderCook = window.localStorage;
-                //var addrCook = window.localStorage;
-                //responderCook.setItem("isResponder", "1");
-                addrCook.setItem("addr", thisAddr + results.input1);
-                
-            }
-            else {
-                //var responderCook2 = window.localStorage;
-                //var addrCook2 = window.localStorage;
-                //responderCook2.setItem("isResponder", "0");
-                //addrCook2.setItem("addr", thisAddr + results.input1);
-               
-            }
-        }
+    // process the promp dialog results
+    function onPrompt(results) {
+        addr = results.input1;
+        var cook = window.localStorage;
+        cook.setItem("thisAddr", addr + "," + thisGPScoord);
     }
-    
+
+    // Show a custom prompt dialog
+    //
+    function showPrompt() {
+        navigator.notification.prompt(
+            'street Addr?',  // message
+            onPrompt,                  // callback to invoke
+            'Where do you live?',            // title
+            ['Ok', 'Exit']              // buttonLabels
+        );
+    }
+    function localPhysicalAddr() {
+        var cook = window.localStorage;
+        addr = cook.getItem("thisAddr");
+        if (addr === null) {
+            // gather address
+            // var addr = "111 1st st";
+            showPrompt();
+            //navigator.notification.alert('firstrun, addr= ' + thisGPScoord);
+            //localPhysicalAddr();
+            //navigator.notification.alert('tried to write div prop');
+        }
+    }  
     function pollForDisaster() {
         // feeds from other apps
     }
@@ -235,7 +199,6 @@
     //    var options = { frequency: 3000 };  // Update every 3 seconds
     //    watchID = navigator.accelerometer.watchAcceleration(onSuccess, onError, options);
     //}
-
     function showAllSessionVars() {
         var storage = window.localStorage;
         var storage2 = window.localStorage;
@@ -246,9 +209,7 @@
 
         //navigator.notification.alert("addr: " + _thisAddr + " isResponder: " + _isResponder + " gps: " + _gps);
     }   
-
     //document.addEventListener("devicemotion", processEvent.bind(this), false);
-
     function onSuccess(acceleration) {
         totalAccel = Math.abs(acceleration.z);
         if (isTrained) {            
@@ -317,7 +278,6 @@
         //shake.startWatch(onShake, 1, onError);
 
     }
-
     class NN {        
         constructor() {
            
@@ -326,7 +286,6 @@
            
         }
     }
-
     function guessQuake() {
         const { Layer, Network } = window.synaptic;
         var inputLayer = new Layer(1);
@@ -404,7 +363,6 @@
             navigator.notification.alert("prediction (0..1): " + prediction);
         }
     }
-
     function addrResponderMenu() {
         var storage = window.localStorage;
         var storage2 = window.localStorage;
@@ -412,11 +370,9 @@
         var _isResponder = storage2.getItem("isResponder");
         //navigator.notification.alert("addr: " + thisAddr + "    " + "isResponder? " + isResponder);
     }
-
     function getHorizFreq() {
         return hFreq;
-    }  
-    
+    }      
     function fail(e) {
         console.log("FileSystem Error");
         console.dir(e);
@@ -446,8 +402,7 @@
             reader.readAsText(file);
 
         }, onErrorReadFile);
-    }       
-
+    }   
     //function exit() {
     //    var exit = document.getElementById("exit");
     //    exit.innerHTML = "Background run mode is OFF";
@@ -456,15 +411,13 @@
     //    wrapper.appendChild(exit);
     //    cordova.plugins.backgroundMode.disable();
     //}
-
-         
     function GPSinit() {  
         // onSuccess Callback
         // This method accepts a Position object, which contains the
         // current GPS coordinates
         var onSuccess = function (position) {
-            thisAddr += "latitude:" + position.coords.latitude + ",longitude:" + position.coords.longitude + ",altitude:" + position.coords.altitude + ",";
-            document.getElementById("out").innerHTML = thisAddr;
+            thisGPScoord += "latitude:" + position.coords.latitude + ",longitude:" + position.coords.longitude + ",altitude:" + position.coords.altitude + ",";
+            document.getElementById("out").innerHTML = addr + "," + thisGPScoord;
             //alert('Latitude: ' + position.coords.latitude + '\n' +
             //    'Longitude: ' + position.coords.longitude + '\n' +
             //    'Altitude: ' + position.coords.altitude + '\n' +
@@ -481,7 +434,6 @@
         }
         navigator.geolocation.getCurrentPosition(onSuccess, onError);
     }
-
     //function onPause() {
     //    // TODO: This application has been suspended. Save application state here.
     //};
@@ -492,11 +444,9 @@
             navigator.notification.alert('Connection failed: ' + errorMessage);
         });
     }
-
     //function onResume() {
     //    // TODO: This application has been reactivated. Restore application state here.
     //};
-
     function decideBeacon(numNeighs) { // eg set this blutooth name based upon pnp/neighbor router
         // *** commented out random selection ***
         var selected = 0;
@@ -558,13 +508,12 @@
         }
 
         return count;
-    }
-    
+    }    
     function setThisBeaconMsg() {
         var storage = window.localStorage;
         var thisGPS = storage.getItem("gps");
         networking.bluetooth.getAdapterState(function (adapterInfo) {
-            bluetoothSerial.setName(thisAddr + " gps: " + thisGPS);
+            bluetoothSerial.setName(thisGPScoord + " gps: " + thisGPS);
         }, function (errorMessage) {
             //navigator.notification.alert(errorMessage);
         });
